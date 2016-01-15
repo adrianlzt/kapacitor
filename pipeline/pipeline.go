@@ -10,14 +10,15 @@ import (
 // A complete data processing pipeline. Starts with a single source.
 // tick:ignore
 type Pipeline struct {
-	Source Node
-	id     ID
-	sorted []Node
+	sources []Node
+	id      ID
+	sorted  []Node
 }
 
 // Create a pipeline from a given script.
 // tick:ignore
 func CreatePipeline(script string, sourceEdge EdgeType, scope *tick.Scope) (*Pipeline, error) {
+	p := &Pipeline{}
 	var src Node
 	switch sourceEdge {
 	case StreamEdge:
@@ -29,14 +30,20 @@ func CreatePipeline(script string, sourceEdge EdgeType, scope *tick.Scope) (*Pip
 	default:
 		return nil, fmt.Errorf("source edge type must be either Stream or Batch not %s", sourceEdge)
 	}
+	src.setPipeline(p)
+	p.addSource(src)
+
 	err := tick.Evaluate(script, scope)
 	if err != nil {
 		return nil, err
 	}
-	p := &Pipeline{Source: src}
 	p.Walk(p.setID)
 	return p, nil
 
+}
+
+func (p *Pipeline) addSource(n Node) {
+	p.sources = append(p.sources, n)
 }
 
 func (p *Pipeline) setID(n Node) error {
@@ -62,7 +69,9 @@ func (p *Pipeline) Walk(f func(n Node) error) error {
 }
 
 func (p *Pipeline) sort() {
-	p.visit(p.Source)
+	for _, src := range p.sources {
+		p.visit(src)
+	}
 	//reverse p.sorted
 	s := p.sorted
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {

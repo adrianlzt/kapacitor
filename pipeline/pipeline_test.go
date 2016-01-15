@@ -21,8 +21,8 @@ w.every(1s)
 	p, err := CreatePipeline(tickScript, StreamEdge, scope)
 	assert.Nil(err)
 	assert.NotNil(p)
-	assert.Equal(1, len(p.Source.Children()))
-	w, ok := p.Source.Children()[0].(*WindowNode)
+	assert.Equal(1, len(p.sources[0].Children()))
+	w, ok := p.sources[0].Children()[0].(*WindowNode)
 	if assert.True(ok) {
 		assert.Equal(time.Duration(10)*time.Second, w.Period)
 		assert.Equal(time.Duration(1)*time.Second, w.Every)
@@ -46,7 +46,7 @@ func TestPipelineSort(t *testing.T) {
 	p5.linkChild(p3)
 
 	p := &Pipeline{
-		Source: p1,
+		sources: []Node{p1},
 	}
 
 	p.sort()

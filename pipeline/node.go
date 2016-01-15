@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/influxdata/kapacitor/tick"
 )
@@ -68,12 +69,15 @@ type Node interface {
 	setTMark(b bool)
 	pMark() bool
 	setPMark(b bool)
+	setPipeline(*Pipeline)
+	pipeline() *Pipeline
 
 	// Return .dot string to graph DAG
 	dot(buf *bytes.Buffer)
 }
 
 type node struct {
+	p        *Pipeline
 	desc     string
 	name     string
 	id       ID
@@ -147,6 +151,13 @@ func (n *node) setPMark(b bool) {
 	n.pm = b
 }
 
+func (n *node) setPipeline(p *Pipeline) {
+	n.p = p
+}
+func (n *node) pipeline() *Pipeline {
+	return n.p
+}
+
 // tick:ignore
 func (n *node) Wants() EdgeType {
 	return n.wants
@@ -161,6 +172,13 @@ func (n *node) dot(buf *bytes.Buffer) {
 	for _, c := range n.children {
 		buf.Write([]byte(fmt.Sprintf("%s -> %s;\n", n.Name(), c.Name())))
 	}
+}
+
+// Create a new stream of data that contains the internal statistics of the node.
+func (n *node) Stats(interval time.Duration) *StatsNode {
+	stats := newStatsNode(n)
+	n.pipeline().addSource(stats)
+	return stats
 }
 
 // ---------------------------------

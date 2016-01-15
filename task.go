@@ -337,6 +337,8 @@ func (et *ExecutingTask) createNode(p pipeline.Node) (Node, error) {
 		return newSampleNode(et, t)
 	case *pipeline.DerivativeNode:
 		return newDerivativeNode(et, t)
+	case *pipeline.StatsNode:
+		return newStatsNode(et, t)
 	default:
 		return nil, fmt.Errorf("unknown pipeline node type %T", p)
 	}
